@@ -1,0 +1,174 @@
+kind: gvc
+name: "{{ .Values.gvc }}"
+description: run trivy scanner for each image in the org's image repository
+tags: {}
+spec:
+  loadBalancer:
+    dedicated: false
+    trustedProxies: 0
+  staticPlacement:
+    locationLinks:
+      {{ .Values.locations }}
+
+---
+kind: workload
+name: daemon
+gvc: "{{ .Values.gvc }}"
+description: daemon
+tags: {}
+spec:
+  type: cron
+  containers:
+    - name: daemon
+      cpu: "1"
+      env:
+        - name: POST_TOKEN
+          value: "{{ .Values.postToken }}"
+        - name: WEB_SERVER_URL
+          value: "{{ .Values.webServerUrl }}"
+      # image: /org/{{ .Values.org }}/image/daemon:0.1
+      image: doron/daemon:0.1
+      inheritEnv: false
+      memory: 1Gi
+    - name: trivi-api
+      cpu: "2"
+      env:
+        - name: TRIVY_AUTH_URL
+          value: https://{{ .Values.org }}.registry.cpln.io
+        - name: TRIVY_PASSWORD
+          value: cpln://secret/trivy-password.payload
+        - name: TRIVY_USERNAME
+          value: unused
+      # image: /org/{{ .Values.org }}/image/trivy-api:0.1
+      image: doron/trivy-api:0.1
+      inheritEnv: false
+      memory: 4Gi
+  defaultOptions:
+    capacityAI: false
+    debug: false
+    suspend: false
+    timeoutSeconds: 120
+  firewallConfig:
+    external:
+      inboundAllowCIDR: []
+      outboundAllowCIDR:
+        - 0.0.0.0/0
+      outboundAllowHostname: []
+      outboundAllowPort: []
+    internal:
+      inboundAllowType: none
+      inboundAllowWorkload: []
+  identityLink: //gvc/{{ .Values.gvc }}/identity/trivy-id
+  job:
+    concurrencyPolicy: Forbid
+    historyLimit: 5
+    restartPolicy: Never
+    schedule: "*/59 * * * *"
+  supportDynamicTags: false
+
+---
+kind: workload
+name: web-server
+gvc: "{{ .Values.gvc }}"
+description: web-server
+tags: {}
+spec:
+  type: serverless
+  containers:
+    - name: web-server
+      cpu: 150m
+      env:
+        - name: POST_TOKEN
+          value: "{{ .Values.postToken }}"
+        - name: S3_BUCKET
+          value: "{{ .Values.S3BucketName }}"
+        - name: S3_REGION
+          value: "{{ .Values.S3Region }}"
+      # image: /org/{{ .Values.org }}/image/web-server:0.1
+      image: doron/web-server:0.1
+      inheritEnv: false
+      memory: 128Mi
+      ports:
+        - number: 8080
+          protocol: http
+  defaultOptions:
+    autoscaling:
+      maxConcurrency: 1000
+      maxScale: 3
+      metric: concurrency
+      minScale: 1
+      scaleToZeroDelay: 300
+      target: 100
+    capacityAI: false
+    debug: false
+    suspend: false
+    timeoutSeconds: 5
+  firewallConfig:
+    external:
+      inboundAllowCIDR:
+        - 0.0.0.0/0
+      outboundAllowCIDR:
+        - 0.0.0.0/0
+      outboundAllowHostname: []
+      outboundAllowPort: []
+    internal:
+      inboundAllowType: none
+      inboundAllowWorkload: []
+  identityLink: //gvc/{{ .Values.gvc }}/identity/trivy-id
+  supportDynamicTags: false
+
+---
+kind: identity
+name: trivy-id
+gvc: "{{ .Values.gvc }}"
+description: trivy-id
+tags: {}
+aws:
+  cloudAccountLink: //cloudaccount/{{ .Values.CloudAccountName }}
+  policyRefs:
+    - aws::AmazonS3FullAccess
+
+
+---
+kind: policy
+name: trivy-can-manage-images
+description: the trivy daemon can read images in the org's image repository
+tags: {}
+bindings:
+  - permissions:
+      - manage
+    principalLinks:
+      - //gvc/{{ .Values.gvc }}/identity/trivy-id
+target: all
+targetKind: image
+
+---
+
+kind: policy
+name: trivy-password-policy
+description: Policy to allow the trivy-id to read the trivy-password secret
+tags: {}
+bindings:
+  - permissions:
+      - manage
+    principalLinks:
+      - //gvc/{{ .Values.gvc }}/identity/trivy-id
+targetKind: secret
+targetLinks:
+  - //secret/trivy-password
+
+---
+
+kind: policy
+name: cpln-trivy-read-images
+description: Policy to allow the Service Account key to read images in the org's image repository
+tags: {}
+bindings:
+  - permissions:
+      - pull
+      - view
+    principalLinks:
+      - //serviceaccount/cpln-trivy-service-account
+target: all
+targetKind: image
+
