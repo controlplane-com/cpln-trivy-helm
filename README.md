@@ -18,7 +18,7 @@ Make sure your cpln profile is pointing to the correct org and that you're signe
 
 To Install:
 
-Only edit the file cpln-trivy/values.yaml file to set all the values.
+**>>> Edit the file cpln-trivy/values.yaml file to set all the values.**
 
 ```
 cpln helm install cpln-trivy
