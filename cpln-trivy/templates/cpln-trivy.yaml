@@ -24,8 +24,6 @@ spec:
       env:
         - name: POST_TOKEN
           value: "{{ .Values.postToken }}"
-        - name: WEB_SERVER_URL
-          value: "{{ .Values.webServerUrl }}"
       # image: /org/{{ .Values.org }}/image/daemon:0.1
       image: doron/daemon:0.1
       inheritEnv: false

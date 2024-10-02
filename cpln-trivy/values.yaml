@@ -1,16 +1,15 @@
 # Default values for cpln-trivy.
 # This is a YAML-formatted file.
 
-org: YOUR_ORG_NAME
-gvc: YOUR_GVC_NAME
+org: doron-test1
+gvc: cpln-test-trivy-scan
 locations:
-  - //location/aws-us-east-2
-CloudAccountName: THE_NAME_OF_YOUR_CLOUD_ACCOUNT_IN_THE_CPLN_CONSOLE
+  - //location/aws-us-west-2
+CloudAccountName: aws-doron-personal
 
-S3BucketName: THE_NAME_OF_YOUR_S3_BUCKET
+S3BucketName: dorongrinstein-bucket1
 S3Region: us-west-2
 
 # This is a symmetric token used to govern access to the web-server when pushing images to S3. It is a secret so do not share it with anyone.
 # you can store it in a CPLN secret so it is not hard-coded in the values.yaml file.
-# change to your own value
-postToken: "T0kkkeeennn"
+postToken: "T0kkkennn"
