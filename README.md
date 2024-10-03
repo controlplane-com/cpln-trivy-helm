@@ -10,11 +10,19 @@ Scan images in the org's image repository and store trivy reports in S3. The URL
 - An AWS account registered in cpln
 - A Control Plane Service Account named "cpln-trivy-service-account" with a key called key1. Make sure to note the key's value as you will not be able to access it later from the UI.
 - Store the key you received in the above step in an opaque secret called "trivy-password"
-  
+
 
 ## Installation
 
-Make sure your cpln profile is pointing to the correct org and that you're signed in as superuser.
+Make sure your cpln profile is pointing to the correct org and that you're signed in as superuser. You can achieve this by doing:
+
+```
+cpln profile update default --org <your org>
+```
+
+## IMPORTANT!
+Make sure the GVC name that you use is NOT an existing GVC. Use a name that is not taken by any existing GVC.
+
 
 To Install:
 
